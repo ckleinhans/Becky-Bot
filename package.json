@@ -1,0 +1,15 @@
+{
+  "name": "uw-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for the UW Madison Online Discord Server.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Caelan Kleinhans",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "quick.db": "^7.1.3"
+  }
+}
