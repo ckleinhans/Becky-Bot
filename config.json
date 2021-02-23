@@ -1,14 +1,14 @@
 {
   "prefix": "!",
+  "joinClassEmoji": "✅",
   "token": "ENTER BOT SECRET TOKEN HERE",
   "adminRoleId": "ROLE THAT GIVES ACCESS TO ALL BOT ADMIN COMMANDS",
-  "emoji": "✅",
-  "classRegisterChannelId": "CHANNEL ID WHERE USERS CAN REGISTER FOR CLASSES",
+  "supportRoleId": "ENTER SUPPORT ROLE ID HERE",
+  "developerId": "ENTER YOUR USER ID HERE",
   "welcomeChannelId": "CHANNEL ID WHERE WELCOME MESSAGES GET SENT",
   "createClassChannelId": "CHANNEL ID WHERE USERS CAN MAKE CLASSES",
+  "classRegisterChannelId": "CHANNEL ID WHERE USERS CAN REGISTER FOR CLASSES",
   "botChannelId": "CHANNEL ID FOR ALL AUTOMATED BOT MESSAGES",
-  "developerId": "ENTER YOUR USER ID HERE",
-  "supportRoleId": "ENTER SUPPORT ROLE ID HERE",
   "levels": [
     { "messageCount": 100, "roleId": "RANK 1 ID" },
     { "messageCount": 500, "roleId": "RANK 2 ID" },
