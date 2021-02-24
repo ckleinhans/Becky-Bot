@@ -1,7 +1,9 @@
 {
   "prefix": "!",
   "joinClassEmoji": "✅",
+  "prankEmojis": ["🧅","👺","💩","🍞","👅","🤮","🔧","🦧","🩲","🤡","🍼","💋","🚽","🧻","🧂","🆒","🆓"],
   "token": "ENTER BOT SECRET TOKEN HERE",
+  "prankRoleId": "ROLE FOR PRANKING PEOPLE",
   "adminRoleId": "ROLE THAT GIVES ACCESS TO ALL BOT ADMIN COMMANDS",
   "supportRoleId": "ENTER SUPPORT ROLE ID HERE",
   "developerId": "ENTER YOUR USER ID HERE",

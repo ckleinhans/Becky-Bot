@@ -4,7 +4,7 @@ const {
   prefix,
   createClassChannelId,
   classRegisterChannelId,
-  emoji,
+  joinClassEmoji,
 } = require("../config.json");
 const {
   getClassData,
@@ -117,7 +117,7 @@ module.exports = {
       joinMessage = await message.guild.channels.cache
         .get(classRegisterChannelId)
         .send(className);
-      await joinMessage.react(emoji);
+      await joinMessage.react(joinClassEmoji);
       console.log(`Sent message and reaction for ${className}`);
 
       classCategories[classCategoryIndex].classes.push({

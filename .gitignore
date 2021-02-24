@@ -5,5 +5,5 @@
 /.pnp
 .pnp.js
 
-# config file
-config.json
+# misc
+.DS_Store

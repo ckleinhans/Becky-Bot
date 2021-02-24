@@ -86,7 +86,7 @@ module.exports.cooldownCheck = (collectionName, userId, cooldownAmount) => {
   return null;
 };
 
-module.exports.handleRankingSystem = (message) => {
+module.exports.handleRankingSystem = async (message) => {
   const { messageCooldown, dailyExperienceLimit } = config.experienceRules;
   // Checks if user has sent message recently, prevents members from spamming to get exp
   if (!this.cooldownCheck("messageCount", message.author.id, messageCooldown)) {
@@ -147,12 +147,12 @@ module.exports.handleRankingSystem = (message) => {
 };
 
 // Handles checking if messages need to be pinned/unpinned and performing necessary action
-module.exports.handlePin = (oldMessage, newMessage) => {
+module.exports.handlePin = async (oldMessage, newMessage) => {
   // If new message exists, contains #pin, is in a class chat and oldMessage does not exist or have #pin, pin it to the channel
-  if (newMessage) {
+  if (newMessage && newMessage.content) {
     if (
       newMessage.content.includes("#pin") &&
-      (!oldMessage || !oldMessage.content.includes("#pin"))
+      (!oldMessage || !oldMessage.content || !oldMessage.content.includes("#pin"))
     ) {
       if (
         classData.find(
@@ -183,6 +183,13 @@ module.exports.handlePin = (oldMessage, newMessage) => {
   }
 };
 
+// Handles pranking the user
+module.exports.handlePrank = async (message) => {
+  const emoji = config.prankEmojis[Math.ceil(Math.random() * config.prankEmojis.length)]
+  message.react(emoji);
+  console.log(`Pranked ${message.author.tag} with random emoji`);
+};
+
 // Get all .js files in commands folder and load them as commands
 const commandFiles = fs
   .readdirSync("./commands")
@@ -205,6 +212,10 @@ client.once("ready", () => {
 });
 
 client.on("message", (message) => {
+  if (message.member.roles.cache.has(config.prankRoleId)) {
+    this.handlePrank(message);
+  }
+
   // Add one to user's message count if sent in a server
   if (message.channel.type !== "dm") {
     this.handleRankingSystem(message);
