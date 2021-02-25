@@ -6,6 +6,7 @@ module.exports = {
   args: false,
   serverOnly: false,
   adminOnly: false,
+  roleLocked: false,
   aliases: [],
 
   execute(message, args) {

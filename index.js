@@ -152,7 +152,9 @@ module.exports.handlePin = async (oldMessage, newMessage) => {
   if (newMessage && newMessage.content) {
     if (
       newMessage.content.includes("#pin") &&
-      (!oldMessage || !oldMessage.content || !oldMessage.content.includes("#pin"))
+      (!oldMessage ||
+        !oldMessage.content ||
+        !oldMessage.content.includes("#pin"))
     ) {
       if (
         classData.find(
@@ -174,7 +176,9 @@ module.exports.handlePin = async (oldMessage, newMessage) => {
           (category) => category.categoryId == newMessage.channel.parentID
         )
       ) {
-        newMessage.unpin({ reason: "message edited to no longer include #pin" });
+        newMessage.unpin({
+          reason: "message edited to no longer include #pin",
+        });
         console.log(
           `Unpinning message from ${newMessage.author.tag} in ${newMessage.channel.name}`
         );
@@ -185,7 +189,8 @@ module.exports.handlePin = async (oldMessage, newMessage) => {
 
 // Handles pranking the user
 module.exports.handlePrank = async (message) => {
-  const emoji = config.prankEmojis[Math.ceil(Math.random() * config.prankEmojis.length)]
+  const emoji =
+    config.prankEmojis[Math.ceil(Math.random() * config.prankEmojis.length)];
   message.react(emoji);
   console.log(`Pranked ${message.author.tag} with random emoji`);
 };
@@ -243,7 +248,7 @@ client.on("message", (message) => {
 
   // Checks if command is server only, if so and is in dm sends error message (adminOnly commands can only be executed in server)
   if (
-    (command.serverOnly || command.adminOnly) &&
+    (command.serverOnly || command.adminOnly || command.permissionLocked) &&
     message.channel.type === "dm"
   ) {
     return message.channel.send("I can't execute that command inside DMs!");
@@ -251,8 +256,10 @@ client.on("message", (message) => {
 
   // Checks if user has role for using the command.
   if (
-    command.adminOnly &&
-    !message.member.roles.cache.has(config.adminRoleId)
+    (command.adminOnly &&
+      !message.member.roles.cache.has(config.adminRoleId)) ||
+    (command.roleLocked &&
+      !message.member.roles.cache.has(config.commandRoleId))
   ) {
     return message.channel.send(
       "Looks like you don't have permission to use that."
@@ -299,14 +306,14 @@ client.on("message", (message) => {
 client.on("messageUpdate", (oldMessage, newMessage) => {
   // When a message is updated (edited) check if it needs to get pinned or unpinned
   this.handlePin(oldMessage, newMessage);
-})
+});
 
 client.on("messageReactionAdd", async (reaction, user) => {
   // Check if the reaction added by a user to the class channel and if so gives them the class role
   if (
     user &&
     !user.bot &&
-    reaction.emoji.toString() == config.emoji &&
+    reaction.emoji.toString() == config.joinClassEmoji &&
     reaction.message.channel.id == config.classRegisterChannelId
   ) {
     const messageClass = this.findClass(reaction.message.id, "messageId");
@@ -328,7 +335,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
   if (
     user &&
     !user.bot &&
-    reaction.emoji.toString() == config.emoji &&
+    reaction.emoji.toString() == config.joinClassEmoji &&
     reaction.message.channel.id == config.classRegisterChannelId
   ) {
     const messageClass = this.findClass(reaction.message.id, "messageId");

@@ -4,6 +4,7 @@
   "prankEmojis": ["🧅","👺","💩","🍞","👅","🤮","🔧","🦧","🩲","🤡","🍼","💋","🚽","🧻","🧂","🆒","🆓"],
   "token": "ENTER BOT SECRET TOKEN HERE",
   "prankRoleId": "ROLE FOR PRANKING PEOPLE",
+  "commandRoleId": "ROLE FOR GIVING CERTAIN COMMANDS",
   "adminRoleId": "ROLE THAT GIVES ACCESS TO ALL BOT ADMIN COMMANDS",
   "supportRoleId": "ENTER SUPPORT ROLE ID HERE",
   "developerId": "ENTER YOUR USER ID HERE",
