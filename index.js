@@ -273,7 +273,7 @@ client.on("message", (message) => {
   // Checks if user has role for using the command.
   if (
     message.channel.type !== "dm" &&
-    this.checkPermission(command, message.member)
+    !this.checkPermission(command, message.member)
   ) {
     return message.channel.send(
       "Looks like you don't have permission to use that."
