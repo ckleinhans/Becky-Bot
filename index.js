@@ -197,13 +197,13 @@ module.exports.handlePrank = async (message) => {
 
 module.exports.checkPermission = (command, member) => {
   if (command.adminOnly) {
-    if (message.member.roles.cache.has(config.adminRoleId)) return true;
+    if (member.roles.cache.has(config.adminRoleId)) return true;
     else return false;
   }
   if (command.roleLocked) {
     if (
-      message.member.roles.cache.has(config.adminRoleId) ||
-      message.member.roles.cache.has(config.commandRoleId)
+      member.roles.cache.has(config.adminRoleId) ||
+      member.roles.cache.has(config.commandRoleId)
     )
       return true;
     else return false;
