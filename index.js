@@ -195,6 +195,22 @@ module.exports.handlePrank = async (message) => {
   console.log(`Pranked ${message.author.tag} with random emoji`);
 };
 
+module.exports.checkPermission = (command, member) => {
+  if (command.adminOnly) {
+    if (message.member.roles.cache.has(config.adminRoleId)) return true;
+    else return false;
+  }
+  if (command.roleLocked) {
+    if (
+      message.member.roles.cache.has(config.adminRoleId) ||
+      message.member.roles.cache.has(config.commandRoleId)
+    )
+      return true;
+    else return false;
+  }
+  return true;
+};
+
 // Get all .js files in commands folder and load them as commands
 const commandFiles = fs
   .readdirSync("./commands")
@@ -257,10 +273,7 @@ client.on("message", (message) => {
   // Checks if user has role for using the command.
   if (
     message.channel.type !== "dm" &&
-    ((command.adminOnly &&
-      !message.member.roles.cache.has(config.adminRoleId)) ||
-      (command.roleLocked &&
-        !message.member.roles.cache.has(config.commandRoleId)))
+    this.checkPermission(command, message.member)
   ) {
     return message.channel.send(
       "Looks like you don't have permission to use that."
@@ -279,7 +292,7 @@ client.on("message", (message) => {
   const timeLeft = this.cooldownCheck(
     command.name,
     message.author.id,
-    command.cooldown || 3
+    command.cooldown || config.defaultCooldown
   );
   if (timeLeft) {
     // user still has to wait

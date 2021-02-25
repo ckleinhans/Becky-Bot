@@ -1,4 +1,5 @@
-const { prefix, adminRoleId, commandRoleId } = require("../config.json");
+const { prefix, defaultCooldown } = require("../config.json");
+const {checkPermission} = require("../index.js");
 
 module.exports = {
   name: "help",
@@ -22,10 +23,7 @@ module.exports = {
           if (!command.adminOnly && !command.roleLocked) {
             data.push(`${command.name} -> ${command.description}`);
           }
-        } else if (
-          (!command.adminOnly || message.member.roles.cache.has(adminRoleId)) &&
-          (!command.roleLocked || message.member.roles.cache.has(commandRoleId))
-        ) {
+        } else if (checkPermission(this, message.member)) {
           data.push(`${command.name} -> ${command.description}`);
         }
       });
@@ -74,7 +72,7 @@ module.exports = {
     if (command.usage)
       data.push(`**Usage:** ${prefix}${command.name} ${command.usage}`);
 
-    data.push(`**Cooldown:** ${command.cooldown || 3} second(s)`);
+    data.push(`**Cooldown:** ${command.cooldown || defaultCooldown} second(s)`);
 
     message.channel.send(data, { split: true });
   },

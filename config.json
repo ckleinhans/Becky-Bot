@@ -1,5 +1,6 @@
 {
   "prefix": "!",
+  "defaultCooldown": 3,
   "joinClassEmoji": "✅",
   "prankEmojis": ["🧅","👺","💩","🍞","👅","🤮","🔧","🦧","🩲","🤡","🍼","💋","🚽","🧻","🧂","🆒","🆓"],
   "token": "ENTER BOT SECRET TOKEN HERE",
