@@ -217,13 +217,13 @@ client.once("ready", () => {
 });
 
 client.on("message", (message) => {
-  if (message.member.roles.cache.has(config.prankRoleId)) {
-    this.handlePrank(message);
-  }
-
   // Add one to user's message count if sent in a server
   if (message.channel.type !== "dm") {
     this.handleRankingSystem(message);
+    // Also handle prank if user has role
+    if (message.member.roles.cache.has(config.prankRoleId)) {
+      this.handlePrank(message);
+    }
   }
 
   // Filter out messages that don't begin with the prefix or that are from the bot
@@ -256,10 +256,11 @@ client.on("message", (message) => {
 
   // Checks if user has role for using the command.
   if (
-    (command.adminOnly &&
+    message.channel.type !== "dm" &&
+    ((command.adminOnly &&
       !message.member.roles.cache.has(config.adminRoleId)) ||
-    (command.roleLocked &&
-      !message.member.roles.cache.has(config.commandRoleId))
+      (command.roleLocked &&
+        !message.member.roles.cache.has(config.commandRoleId)))
   ) {
     return message.channel.send(
       "Looks like you don't have permission to use that."
