@@ -4,10 +4,10 @@ module.exports = {
   description: "Teehee",
   usage: "",
   cooldown: 5,
-  args: true,
+  args: false,
   serverOnly: true,
   adminOnly: false,
-  roleLocked: true,
+  levelIndexRequired: 1,
   aliases: ["onion"],
 
   execute(message, args) {
@@ -20,7 +20,7 @@ module.exports = {
       message.channel.send("🚫🧅");
     } else {
       message.guild.member(user).roles.add(role);
-      message.channel.send("✔️🧅");
+      message.channel.send("✅🧅");
     }
   },
 };

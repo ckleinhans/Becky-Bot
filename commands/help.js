@@ -1,5 +1,5 @@
 const { prefix, defaultCooldown } = require("../config.json");
-const {checkPermission} = require("../index.js");
+const { checkPermission } = require("../index.js");
 
 module.exports = {
   name: "help",
@@ -20,7 +20,7 @@ module.exports = {
       data.push("Hey Badger! Here's all the stuff I can do:");
       commands.map((command) => {
         if (message.channel.type === "dm") {
-          if (!command.adminOnly && !command.roleLocked) {
+          if (!command.adminOnly) {
             data.push(`${command.name} -> ${command.description}`);
           }
         } else if (checkPermission(this, message.member)) {

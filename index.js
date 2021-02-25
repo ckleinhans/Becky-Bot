@@ -200,12 +200,9 @@ module.exports.checkPermission = (command, member) => {
     if (member.roles.cache.has(config.adminRoleId)) return true;
     else return false;
   }
-  if (command.roleLocked) {
-    if (
-      member.roles.cache.has(config.adminRoleId) ||
-      member.roles.cache.has(config.commandRoleId)
-    )
-      return true;
+  if (command.levelIndexRequired) {
+    const levelIndex = db.get(`${message.author.id}.levelIndex`);
+    if (levelIndex && levelIndex >= command.levelIndexRequired) return true;
     else return false;
   }
   return true;
