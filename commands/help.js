@@ -19,11 +19,7 @@ module.exports = {
     if (!args.length) {
       data.push("Hey Badger! Here's all the stuff I can do:");
       commands.map((command) => {
-        if (message.channel.type === "dm") {
-          if (!command.adminOnly) {
-            data.push(`${command.name} -> ${command.description}`);
-          }
-        } else if (checkPermission(this, message.member)) {
+        if (checkPermission(this, message.member)) {
           data.push(`${command.name} -> ${command.description}`);
         }
       });

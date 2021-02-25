@@ -197,11 +197,11 @@ module.exports.handlePrank = async (message) => {
 
 module.exports.checkPermission = (command, member) => {
   if (command.adminOnly) {
-    if (member.roles.cache.has(config.adminRoleId)) return true;
+    if (member && member.roles.cache.has(config.adminRoleId)) return true;
     else return false;
   }
   if (command.levelIndexRequired) {
-    const levelIndex = db.get(`${message.author.id}.levelIndex`);
+    const levelIndex = db.get(`${member.id}.levelIndex`);
     if (levelIndex && levelIndex >= command.levelIndexRequired) return true;
     else return false;
   }
