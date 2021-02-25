@@ -190,7 +190,7 @@ module.exports.handlePin = async (oldMessage, newMessage) => {
 // Handles pranking the user
 module.exports.handlePrank = async (message) => {
   const emoji =
-    config.prankEmojis[Math.ceil(Math.random() * config.prankEmojis.length)];
+    config.prankEmojis[Math.floor(Math.random() * config.prankEmojis.length)];
   message.react(emoji);
   console.log(`Pranked ${message.author.tag} with random emoji`);
 };
