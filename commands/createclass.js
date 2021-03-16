@@ -6,11 +6,7 @@ const {
   classRegisterChannelId,
   joinClassEmoji,
 } = require("../config.json");
-const {
-  getClassData,
-  setClassData,
-  findClass,
-} = require("../index.js");
+const { getClassData, setClassData, findClass } = require("../index.js");
 
 module.exports = {
   name: "createclass",
@@ -37,6 +33,7 @@ module.exports = {
         `Improper usage of ${this.name}. Usage: ${prefix}${this.name} ${this.usage}`
       );
     }
+    args[0] = args[0].toLowerCase();
     if (!departments.includes(args[0])) {
       return message.channel.send(
         `${args[0]} is not a valid department code. Use !departments to get a list of all valid codes.`
@@ -50,9 +47,14 @@ module.exports = {
 
     const classCategories = getClassData();
 
-    if (findClass(className, "className")) {
+    const classObj = findClass(className, "className");
+
+    if (classObj) {
+      const classMsgUrl = message.guild.channels
+        .resolve(classRegisterChannelId)
+        .messages.resolve(classObj.messageId).url;
       return message.channel.send(
-        `There is already a class named ${className}.`
+        `There is already a class named ${className}. Join here: ${classMsgUrl}`
       );
     }
 
@@ -137,15 +139,27 @@ module.exports = {
     } catch (error) {
       // Pass off error to the parent after remove anything created
       if (classRole) {
-        classRole.delete().then(() => console.log(`Error creating class, deleted role ${className}`));
+        classRole
+          .delete()
+          .then(() =>
+            console.log(`Error creating class, deleted role ${className}`)
+          );
       }
       if (classChannel) {
-        classChannel.delete().then(() => console.log(`Error creating class, deleted channel ${className}`));
+        classChannel
+          .delete()
+          .then(() =>
+            console.log(`Error creating class, deleted channel ${className}`)
+          );
       }
       if (joinMessage) {
-        joinMessage.delete().then(() => console.log(`Error creating class, deleted channel ${className}`));
+        joinMessage
+          .delete()
+          .then(() =>
+            console.log(`Error creating class, deleted channel ${className}`)
+          );
       }
-      throw(error);
+      throw error;
     }
   },
 };

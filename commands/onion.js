@@ -11,16 +11,17 @@ module.exports = {
   aliases: ["onion"],
 
   execute(message, args) {
-    const user = message.mentions.users.first()
-      ? message.mentions.users.first()
-      : message.author;
+    const user =
+      message.mentions.users.first() && !message.mentions.users.first().bot
+        ? message.mentions.users.first()
+        : message.author;
     const role = message.guild.roles.resolve(prankRoleId);
-    if (message.member.roles.cache.has(prankRoleId)) {
+    if (message.guild.member(user).roles.cache.has(prankRoleId)) {
       message.guild.member(user).roles.remove(role);
-      message.channel.send("🚫🧅");
+      message.channel.send("-🚫🧅-");
     } else {
       message.guild.member(user).roles.add(role);
-      message.channel.send("✅🧅");
+      message.channel.send("-✅🧅-");
     }
   },
 };
