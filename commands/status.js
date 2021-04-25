@@ -1,4 +1,5 @@
 const { client } = require("../index.js");
+const { prefix } = require("../config.json");
 
 const activityTypes = [
   "playing",
@@ -16,14 +17,15 @@ module.exports = {
   cooldown: 5,
   args: true,
   serverOnly: false,
-  adminOnly: true,
+  adminOnly: false,
+  levelIndexRequired: 2,
   aliases: ["setstatus"],
 
   execute(message, args) {
     activityType = args.shift().toLowerCase();
     if (!activityTypes.includes(activityType)) {
       return message.channel.send(
-        `Improper usage of ${command.name}. Usage: ${config.prefix}${command.name} ${command.usage}`
+        `Improper usage of ${this.name}. Usage: ${prefix}${this.name} ${this.usage}`
       );
     }
     if (activityType == "custom") {
