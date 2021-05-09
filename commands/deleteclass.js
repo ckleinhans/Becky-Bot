@@ -1,5 +1,4 @@
-const { classRegisterChannelId } = require("../config.json");
-const fs = require("fs");
+const { classRegisterChannelId, levels } = require("../config.json");
 const {
   getClassData,
   setClassData,
@@ -8,20 +7,18 @@ const {
 } = require("../index.js");
 
 module.exports = {
-  name: "removeclass",
+  name: "deleteclass",
   description:
-    "Removes a class from the class list and puts it channel into the class archive.",
-  usage: "<class name> <archive category id>",
+    "Completely removes a class from the server permanently without archiving it.",
+  usage: "<class name>",
   cooldown: 5,
   args: true,
   serverOnly: true,
   adminOnly: true,
-  aliases: ["deleteclass", "rc"],
+  aliases: ["dc"],
 
-
-  // TODO entire revamp of command to handle new archive process
   execute(message, args) {
-    if (args.length < 2) {
+    if (args.length < 1) {
       return message.channel.send(
         `Improper usage of ${this.name}. Usage: ${prefix}${this.name} ${this.usage}`
       );
@@ -34,19 +31,10 @@ module.exports = {
 
     // Move channel to archive and update permissions
     const classChannel = message.guild.channels.resolve(classInfo.channelId);
-    classChannel.setParent(args[1]);
-    // TODO check if permissions auto updated
-    // classChannel.overwritePermissions(
-    //   [
-    //     {
-    //       id: message.guild.id,
-    //       allow: ["VIEW_CHANNEL"],
-    //       deny: ["SEND_MESSAGES"],
-    //     },
-    //   ],
-    //   "Class deleted"
-    // );
-    console.log(`Archived channel ${className}`);
+    classChannel
+      .delete()
+      .then(console.log(`DELETED channel ${className}`))
+      .catch((error) => handleError(error));
 
     // Delete message in class registration channel
     message.guild.channels
@@ -56,8 +44,11 @@ module.exports = {
       .catch((error) => handleError(error));
 
     // Delete class role
-    message.guild.roles.cache.get(classInfo.roleId).delete("Class deleted");
-    console.log(`Deleted role ${className}`);
+    message.guild.roles
+      .resolve(classInfo.roleId)
+      .delete("Class deleted")
+      .then(console.log(`Deleted role ${className}`))
+      .catch((error) => handleError(error));
 
     // Remove class from classData
     for (let i = 0; i < classCategories.length; i++) {
@@ -70,7 +61,7 @@ module.exports = {
 
     // Update classes list
     setClassData(classCategories);
-    message.channel.send(`Class ${className} has been archived.`);
+    message.channel.send(`Class ${className} has been DELETED.`);
     return;
   },
 };
