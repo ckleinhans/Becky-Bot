@@ -1,4 +1,4 @@
-const { classRegisterChannelId, levels } = require("../config.json");
+const { classRegisterChannelId, prefix } = require("../config.json");
 const {
   getClassData,
   setClassData,

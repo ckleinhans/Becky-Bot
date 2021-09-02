@@ -1,10 +1,10 @@
 const { departments } = require("../departments.json");
-const fs = require("fs");
 const {
   prefix,
   createClassChannelId,
   classRegisterChannelId,
   joinClassEmoji,
+  inviteLink,
 } = require("../config.json");
 const { getClassData, setClassData, findClass } = require("../index.js");
 
@@ -21,9 +21,8 @@ module.exports = {
   // eslint-disable-next-line no-unused-vars
   async execute(message, args) {
     if (message.channel.id != createClassChannelId) {
-      const createChannel = message.guild.channels.cache.get(
-        createClassChannelId
-      );
+      const createChannel =
+        message.guild.channels.cache.get(createClassChannelId);
       return message.channel.send(
         `You can only use that command in ${createChannel}.`
       );
@@ -114,6 +113,12 @@ module.exports = {
         ],
       });
       console.log(`Created channel ${className}`);
+      classChannel.send(
+        `Welcome to <@&${classRole.id}>!\n\n` +
+          `To get the most out of this class channel, make sure to invite as many ` +
+          `classmates as you can and get the conversation started as soon as possible!\n\n` +
+          `You can use this link to invite others to the server: ${inviteLink}`
+      );
 
       // create join message
       joinMessage = await message.guild.channels.cache

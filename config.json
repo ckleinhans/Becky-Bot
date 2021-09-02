@@ -12,6 +12,7 @@
   "createClassChannelId": "CHANNEL ID WHERE USERS CAN MAKE CLASSES",
   "classRegisterChannelId": "CHANNEL ID WHERE USERS CAN REGISTER FOR CLASSES",
   "botChannelId": "CHANNEL ID FOR ALL AUTOMATED BOT MESSAGES",
+  "inviteLink": "NON-EXPIRING INVITE LINK TO SERVER",
   "levels": [
     { "messageCount": 100, "roleId": "RANK 1 ID" },
     { "messageCount": 500, "roleId": "RANK 2 ID" },
