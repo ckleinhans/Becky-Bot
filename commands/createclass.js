@@ -115,8 +115,10 @@ module.exports = {
       console.log(`Created channel ${className}`);
       classChannel.send(
         `Welcome to <@&${classRole.id}>!\n\n` +
+          `You can tag <@&${classRole.id}> in any message to notify all members of this channel.\n\n` +
+          `To pin messages in this channel, just include #pin somewhere in your message.\n\n` +
           `To get the most out of this class channel, make sure to invite as many ` +
-          `classmates as you can and get the conversation started as soon as possible!\n\n` +
+          `classmates as you can to get the conversation started as soon as possible!\n\n` +
           `You can use this link to invite others to the server: ${inviteLink}`
       );
 
