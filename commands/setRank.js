@@ -8,7 +8,7 @@ module.exports = {
   cooldown: 5,
   args: true,
   serverOnly: false,
-  adminOnly: true,
+  adminOnly: false,
   aliases: [],
 
   execute(message, args) {
