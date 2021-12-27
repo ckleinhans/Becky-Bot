@@ -77,6 +77,9 @@ module.exports = {
       while (classCategoryIndex < classCategories.length) {
         if (classCategories[classCategoryIndex].classes.length < 50) {
           classCategoryId = classCategories[classCategoryIndex].categoryId;
+          console.log(
+            `Adding class to category with index ${classCategoryIndex}`
+          );
           break;
         } else {
           classCategoryIndex++;
@@ -95,6 +98,14 @@ module.exports = {
             ],
           })
         ).id;
+        classCategories.push({
+          categoryId: classCategoryId,
+          classes: [],
+        });
+        console.log(
+          `Class categories full. Creating new category with index ${classCategoryIndex}`
+        );
+        setClassData(classCategories);
       }
 
       // create channel
