@@ -1,5 +1,5 @@
 {
-    "departments":[
+  "departments": [
     "aae",
     "afaero",
     "abt",
@@ -191,5 +191,5 @@
     "theatre",
     "urbrpl",
     "zoology"
-    ]
-    }
+  ]
+}

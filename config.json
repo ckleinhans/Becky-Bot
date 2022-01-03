@@ -1,25 +1,25 @@
 {
-  "prefix": "!",
-  "defaultCooldown": 3,
-  "joinClassEmoji": "✅",
+  "adminRoleId": "ID OF ADMIN ROLE",
+  "classCreateChannelId": "ID OF CLASS CREATION CHANNEL",
+  "classJoinChannelId": "ID OF CLASS JOIN CHANNEL",
+  "classJoinEmoji": "✅",
+  "clientId": "USER ID OF BOT CLIENT",
+  "currencyName": "🪙 BadgerCoin",
+  "developerId": "DEVELOPER'S USER ID",
+  "experienceName": "🔹 Experience",
+  "dailyExperienceLimit": 20,
+  "guildId": "ID OF GUILD TO MANAGE",
+  "guildInviteLink": "INVITE LINK TO GUILD",
   "prankEmojis": ["🧅","👺","💩","🍞","👅","🤮","🔧","🦧","🩲","🤡","🍼","💋","🚽","🧻","🧂","🆒","🆓"],
-  "token": "ENTER BOT SECRET TOKEN HERE",
-  "prankRoleId": "ROLE FOR PRANKING PEOPLE",
-  "adminRoleId": "ROLE THAT GIVES ACCESS TO ALL BOT ADMIN COMMANDS",
-  "supportRoleId": "ENTER SUPPORT ROLE ID HERE",
-  "developerId": "ENTER YOUR USER ID HERE",
-  "welcomeChannelId": "CHANNEL ID WHERE WELCOME MESSAGES GET SENT",
-  "createClassChannelId": "CHANNEL ID WHERE USERS CAN MAKE CLASSES",
-  "classRegisterChannelId": "CHANNEL ID WHERE USERS CAN REGISTER FOR CLASSES",
-  "botChannelId": "CHANNEL ID FOR ALL AUTOMATED BOT MESSAGES",
-  "inviteLink": "NON-EXPIRING INVITE LINK TO SERVER",
-  "levels": [
-    { "messageCount": 100, "roleId": "RANK 1 ID" },
-    { "messageCount": 500, "roleId": "RANK 2 ID" },
-    { "messageCount": 1500, "roleId": "RANK 3 ID" }
+  "prankRoleId": "ID OF ROLE TO PRANK",
+  "rankManagerRoleId": "ID OF ROLE THAT CAN MAKE ADMINS",
+  "ranks": [
+    { "name": "Member", "icon": "⭐", "maxExperience": 99 },
+    { "name": "Peer Mentor", "icon": "⭐⭐", "minExperience": 100, "maxExperience": 499, "roleId": "ID OF ROLE" },
+    { "name": "Teaching Assistant", "icon": "⭐⭐⭐", "minExperience": 500, "maxExperience": 1499, "roleId": "ID OF ROLE" },
+    { "name": "Associate Professor", "icon": "⭐⭐⭐⭐", "minExperience": 1500, "roleId": "ID OF ROLE" },
+    { "name": "Professor", "icon": "⭐⭐⭐⭐⭐", "roleId": "ID OF ROLE" }
   ],
-  "experienceRules": {
-    "messageCooldown": 5,
-    "dailyExperienceLimit": 20
-  }
+  "token": "BOT SECRET TOKEN FROM DEVELOPER PAGE",
+  "welcomeChannelId": "ID OF CHANNEL TO SEND WELCOME MESSAGES"
 }

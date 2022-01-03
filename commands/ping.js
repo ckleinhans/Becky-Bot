@@ -1,15 +1,15 @@
-module.exports = {
-  name: "ping",
-  description: "Pong!",
-  usage: "",
-  cooldown: 5,
-  args: false,
-  serverOnly: false,
-  adminOnly: false,
-  levelIndexRequired: 0,
-  aliases: [],
+const { SlashCommandBuilder } = require("@discordjs/builders");
 
-  execute(message, args) {
-    message.channel.send("Pong!");
+/*
+Ping command used to test bot's responsiveness.
+*/
+
+module.exports = {
+  global: true,
+  data: new SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Replies with Pong!"),
+  async execute(interaction) {
+    await interaction.reply("Pong!");
   },
 };

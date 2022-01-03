@@ -1,67 +1,72 @@
-const { classRegisterChannelId, levels } = require("../config.json");
-const {
-  getClassData,
-  setClassData,
-  findClass,
-  handleError,
-} = require("../index.js");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { ChannelType } = require("discord-api-types/v9");
+const { MessageEmbed } = require("discord.js");
+const { adminRoleId, classJoinChannelId } = require("../config.json");
+
+/*
+Command used to delete classes (does not archive them).
+*/
 
 module.exports = {
-  name: "deleteclass",
-  description:
-    "Completely removes a class from the server permanently without archiving it.",
-  usage: "<class name>",
-  cooldown: 5,
-  args: true,
-  serverOnly: true,
-  adminOnly: true,
-  aliases: ["dc"],
+  global: false,
+  roleIds: [adminRoleId],
+  data: new SlashCommandBuilder()
+    .setName("deleteclass")
+    .setDescription("Deletes the specified class or the current class channel.")
+    .addChannelOption((option) =>
+      option
+        .setName("class")
+        .setDescription(
+          "The class channel to delete if not the active channel."
+        )
+        .setRequired(false)
+        .addChannelType(ChannelType.GuildText)
+    ),
+  async execute(interaction) {
+    const { categoryData, classData } = interaction.client;
+    const channel =
+      interaction.options.getChannel("class") ?? interaction.channel;
 
-  execute(message, args) {
-    if (args.length < 1) {
-      return message.channel.send(
-        `Improper usage of ${this.name}. Usage: ${prefix}${this.name} ${this.usage}`
-      );
+    // Get class object from classData based on channel ID
+    const classObj = classData.find((c) => c.channelId === channel.id);
+
+    // If no class object matches channel ID, return error message
+    if (!classObj) {
+      return await interaction.reply({
+        content: `There is no class associated with channel ${channel}`,
+        ephemeral: true,
+      });
     }
-
-    let classCategories = getClassData();
-
-    const classInfo = findClass(args[0], "className");
-    const className = classInfo.className;
-
-    // Move channel to archive and update permissions
-    const classChannel = message.guild.channels.resolve(classInfo.channelId);
-    classChannel
-      .delete()
-      .then(console.log(`DELETED channel ${className}`))
-      .catch((error) => handleError(error));
 
     // Delete message in class registration channel
-    message.guild.channels
-      .resolve(classRegisterChannelId)
-      .messages.fetch(classInfo.messageId)
-      .then((messageObj) => messageObj.delete())
-      .catch((error) => handleError(error));
+    const classJoinChannel = await interaction.guild.channels.fetch(
+      classJoinChannelId
+    );
+    await classJoinChannel.messages.delete(classObj.messageId);
+    console.log(`Deleted join message for ${classObj.name}`);
 
     // Delete class role
-    message.guild.roles
-      .resolve(classInfo.roleId)
-      .delete("Class deleted")
-      .then(console.log(`Deleted role ${className}`))
-      .catch((error) => handleError(error));
+    const role = await interaction.guild.roles.fetch(classObj.roleId);
+    await role.delete("Class deleted");
+    console.log(`Deleted role for ${classObj.name}`);
 
-    // Remove class from classData
-    for (let i = 0; i < classCategories.length; i++) {
-      for (let j = 0; j < classCategories[i].classes.length; j++) {
-        if (classCategories[i].classes[j].className == className) {
-          classCategories[i].classes.splice(j, 1);
-        }
-      }
-    }
+    // Delete channel
+    const classChannel = await interaction.guild.channels.fetch(
+      classObj.channelId
+    );
+    await classChannel.delete("Class deleted");
+    console.log(`Deleted channel ${classObj.name}`);
 
-    // Update classes list
-    setClassData(classCategories);
-    message.channel.send(`Class ${className} has been DELETED.`);
-    return;
+    // Decrement category classes & remove class data using helper functions
+    await categoryData.addClass(classObj.categoryId, -1);
+    await classData.deleteClass(classObj.name);
+
+    const embed = new MessageEmbed()
+      .setColor("#ff0000")
+      .setAuthor(
+        `Deleted class ${classObj.name}`,
+        interaction.client.user.avatarURL()
+      );
+    await interaction.reply({ embeds: [embed], ephemeral: true });
   },
 };

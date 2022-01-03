@@ -2,9 +2,10 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
+
+# database & config
+.sqlite
+config.json
 
 # misc
 .DS_Store
-config.json

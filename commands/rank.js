@@ -1,37 +1,41 @@
-const db = require("quick.db");
-const { levels } = require("../config.json");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { MessageEmbed } = require("discord.js");
+const { experienceName, ranks } = require("../config.json");
+
+/*
+Command used to get a user's experience and rank.
+*/
 
 module.exports = {
-  name: "rank",
-  description:
-    "Checks your current experience and how much is required to reach the next rank.",
-  usage: "",
-  cooldown: 5,
-  args: false,
-  serverOnly: false,
-  adminOnly: false,
-  aliases: ["level"],
+  global: true,
+  data: new SlashCommandBuilder()
+    .setName("rank")
+    .setDescription("Checks your or another user's rank.")
+    .addUserOption((option) =>
+      option
+        .setName("user")
+        .setDescription("User to check the rank of")
+        .setRequired(false)
+    ),
+  async execute(interaction) {
+    const user = interaction.options.getUser("user") ?? interaction.user;
 
-  execute(message, args) {
-    const user = message.mentions.users.first()
-      ? message.mentions.users.first()
-      : message.author;
-    const messageCount = db.get(`${user.id}.messageCount`) || 0;
-    let levelIndex = db.get(`${user.id}.levelIndex`);
-    if (levelIndex === undefined) {
-      levelIndex = -1;
-    }
-    const pronoun = message.mentions.users.first() ? "They" : "You";
-    const mention = message.mentions.users.first() ? `${user.username} has` : "you have";
-    const nextLevelMsg = user.bot
-      ? "As a bot, we have no need for silly ranks as we have far surpassed the potential of you puny mortals."
-      : levels[levelIndex + 1]
-      ? `${pronoun} need ${
-          levels[levelIndex + 1].messageCount
-        } experience to reach the next rank.`
-      : `${pronoun} already have the highest rank!`;
-    message.reply(
-      `${mention} a total of ${messageCount} experience. ${nextLevelMsg}`
-    );
+    const data = interaction.client.userData.get(user.id) ?? {
+      experience: 0,
+      rank: 0,
+    };
+    const rank = ranks[data.rank];
+
+    const embed = new MessageEmbed()
+      .setColor("#ff0000")
+      .setTitle(`${rank.icon}\n${rank.name}`)
+      .setDescription(
+        `${data.experience} ${
+          rank.maxExperience ? `/ ${rank.maxExperience + 1}` : ""
+        } ${experienceName}`
+      )
+      .setAuthor(`${user.username}'s rank`, user.avatarURL());
+
+    await interaction.reply({ embeds: [embed] });
   },
 };

@@ -1,382 +1,280 @@
-// Establish all dependencies
-const Discord = require("discord.js");
-const config = require("./config.json");
 const fs = require("fs");
-const db = require("quick.db");
+const { Client, Collection, Intents } = require("discord.js");
+const { Users, Categories, Classes } = require("./dbObjects.js");
+const {
+  dailyExperienceLimit,
+  developerId,
+  token,
+  ranks,
+} = require("./config.json");
 
-// Create the client and player objects, as well as create collections for cooldown tracking
-const client = new Discord.Client({
+// Create client object
+const client = new Client({
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MEMBERS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+  ],
+  // Use partials to allow events involving un-cached messages
+  // Must fetch objects before performing actions on them
   partials: ["MESSAGE", "CHANNEL", "REACTION"],
 });
-const cooldowns = new Discord.Collection();
-client.commands = new Discord.Collection();
 
-// Get client variable in other files
-module.exports.client = client;
+// Define collections for holding userData, classData and commands
+client.userData = new Collection();
+client.classData = new Collection();
+client.categoryData = new Collection();
+client.commands = new Collection();
 
-// Load the classes from classes.json
-let classData;
-console.log("Loading classes file...");
-const data = fs.readFileSync("./classes.json");
-try {
-  classData = JSON.parse(data);
-} catch (err) {
-  console.log("ERROR PARSING classes.json");
-  console.log(err);
-}
-
-// Lets other files access classData variable
-module.exports.getClassData = () => {
-  return classData;
-};
-
-// lets other files write and save classData
-module.exports.setClassData = (data) => {
-  classData = data;
-  const output = JSON.stringify(data);
-  fs.writeFile("./classes.json", output, (error) => {
-    if (error) {
-      this.handleError(error);
-    } else {
-      console.log("classes.json file written.");
-    }
-  });
-};
-
-// called on errors to send a dm to the developer listed in the config
-module.exports.handleError = async (error) => {
-  console.log(error);
-  const developer = await client.users.fetch(config.developerId);
-  developer.send(error.toString());
-};
-
-module.exports.findClass = (lookupVar, propertyName) => {
-  for (let i = 0; i < classData.length; i++) {
-    const foundClass = classData[i].classes.find(
-      (foundClass) => foundClass[propertyName] == lookupVar
-    );
-    if (foundClass) {
-      return foundClass;
-    }
-  }
-};
-
-module.exports.cooldownCheck = (collectionName, userId, cooldownAmount) => {
-  // Check if cooldown collection exists, if not add it
-  if (!cooldowns.has(collectionName)) {
-    cooldowns.set(collectionName, new Discord.Collection());
-  }
-  const now = Date.now();
-  const timestamps = cooldowns.get(collectionName);
-  cooldownAmount = cooldownAmount * 1000;
-
-  // If author exists in cooldown collection, check if they have to wait to call command again
-  if (timestamps.has(userId)) {
-    const expirationTime = timestamps.get(userId) + cooldownAmount;
-    // if user has more time to wait, return the time left
-    if (now < expirationTime) {
-      const timeLeft = (expirationTime - now) / 1000;
-      return timeLeft;
-    }
-  }
-  // If author wasn't in the collection add them with new timestamp
-  timestamps.set(userId, now);
-  setTimeout(() => timestamps.delete(userId), cooldownAmount);
-  // null means user is good to go
-  return null;
-};
-
-module.exports.handleRankingSystem = async (message) => {
-  const { messageCooldown, dailyExperienceLimit } = config.experienceRules;
-  // Checks if user has sent message recently, prevents members from spamming to get exp
-  if (!this.cooldownCheck("messageCount", message.author.id, messageCooldown)) {
-    // Checks if user has sent a message in the past 24 hours
-    if (
-      this.cooldownCheck("dailyMessageLimit", message.author.id, 60 * 60 * 24)
-    ) {
-      // If yes, checks the messages they have sent today
-      if (
-        Number(db.get(`${message.author.id}.dailyMessages`)) <=
-        dailyExperienceLimit
-      ) {
-        // Only increments experience if they have less than the max per day
-        db.add(`${message.author.id}.dailyMessages`, 1);
-        db.add(`${message.author.id}.messageCount`, 1);
-      }
-    } else {
-      // If user hasn't sent message in 24 hours, resets daily messages and increments exp
-      db.set(`${message.author.id}.dailyMessages`, 1);
-      db.add(`${message.author.id}.messageCount`, 1);
-    }
-  }
-
-  // If user is bot don't try to rank up
-  if (message.author.bot) return;
-
-  // Check if user needs a role upgrade
-  const messageCount = db.get(`${message.author.id}.messageCount`) || 0;
-  let levelIndex = db.get(`${message.author.id}.levelIndex`);
-  if (levelIndex === undefined) {
-    levelIndex = -1;
-  }
-  // If there is a level above user current level and if they have sent enough messages
-  if (config.levels[levelIndex + 1]) {
-    if (messageCount >= config.levels[levelIndex + 1].messageCount) {
-      // Get next role and add to user
-      message.guild.roles
-        .fetch(config.levels[levelIndex + 1].roleId)
-        .then((role) => {
-          message.guild.member(message.author).roles.add(role);
-          console.log(`Added ${message.author.tag} to ${role.name}`);
-          // If there is a level below, remove it from the user.
-          if (levelIndex >= 0) {
-            message.guild
-              .member(message.author)
-              .roles.remove(config.levels[levelIndex].roleId);
-            console.log(`Removed ${message.author.tag} from previous role`);
-          }
-          // Update database with new user level and send level up message to bot channel
-          db.set(`${message.author.id}.levelIndex`, levelIndex + 1);
-          message.guild.channels
-            .resolve(config.botChannelId)
-            .send(`${message.author} just leveled up to ${role.name}!`);
-        })
-        .catch((error) => this.handleError(error));
-    }
-  }
-};
-
-// Handles checking if messages need to be pinned/unpinned and performing necessary action
-module.exports.handlePin = async (oldMessage, newMessage) => {
-  // If new message exists, contains #pin, is in a class chat and oldMessage does not exist or have #pin, pin it to the channel
-  if (newMessage && newMessage.content) {
-    if (
-      newMessage.content.includes("#pin") &&
-      (!oldMessage ||
-        !oldMessage.content ||
-        !oldMessage.content.includes("#pin"))
-    ) {
-      if (
-        classData.find(
-          (category) => category.categoryId == newMessage.channel.parentID
-        )
-      ) {
-        newMessage.pin({ reason: "message included #pin" });
-        console.log(
-          `Pinning message from ${newMessage.author.tag} in ${newMessage.channel.name}`
-        );
-      }
-    } else if (
-      !newMessage.content.includes("#pin") &&
-      oldMessage &&
-      oldMessage.content.includes("#pin")
-    ) {
-      if (
-        classData.find(
-          (category) => category.categoryId == newMessage.channel.parentID
-        )
-      ) {
-        newMessage.unpin({
-          reason: "message edited to no longer include #pin",
-        });
-        console.log(
-          `Unpinning message from ${newMessage.author.tag} in ${newMessage.channel.name}`
-        );
-      }
-    }
-  }
-};
-
-// Handles pranking the user
-module.exports.handlePrank = async (message) => {
-  const emoji =
-    config.prankEmojis[Math.floor(Math.random() * config.prankEmojis.length)];
-  message.react(emoji);
-  console.log(`Pranked ${message.author.tag} with random emoji`);
-};
-
-module.exports.checkPermission = (command, member) => {
-  if (command.adminOnly) {
-    if (member && member.roles.cache.has(config.adminRoleId)) return true;
-    else return false;
-  }
-  if (command.levelIndexRequired) {
-    const levelIndex = db.get(`${member.id}.levelIndex`);
-    if (levelIndex && levelIndex >= command.levelIndexRequired) return true;
-    else return false;
-  }
-  return true;
-};
-
-// Get all .js files in commands folder and load them as commands
+// Get list of all command files from commands directory
 const commandFiles = fs
   .readdirSync("./commands")
   .filter((file) => file.endsWith(".js"));
+
+// Load all commands into command collection
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-  client.commands.set(command.name, command);
+  // Create new item in collection with key = command name, value = exported module
+  client.commands.set(command.data.name, command);
 }
 
-// On bot startup
-client.once("ready", () => {
-  console.log("Ready!");
-  client.user.setPresence({
-    status: "online",
-    activity: {
-      name: "Canvas",
-      type: "PLAYING",
-    },
-  });
+// Get list of all event handler files from events directory
+const eventFiles = fs
+  .readdirSync("./events")
+  .filter((file) => file.endsWith(".js"));
+
+// Set up client event handlers using list of files from events directory.
+for (const file of eventFiles) {
+  const event = require(`./events/${file}`);
+  // Allows client to listen for event once or multiple times depending on once flag.
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args));
+  }
+}
+
+// Save store items as property of client using item name as key
+// TODO, might only need to store use functions, but for now store all just in case
+client.shopItems = {};
+const shopFiles = fs
+  .readdirSync("./shop")
+  .filter((file) => file.endsWith(".js"));
+shopFiles.forEach((file) => {
+  const item = require(`./shop/${file}`);
+  client.shopItems[item.data.name] = item;
 });
 
-client.on("message", (message) => {
-  // Add one to user's message count if sent in a server
-  if (message.channel.type !== "dm") {
-    this.handleRankingSystem(message);
-    // Also handle prank if user has role
-    if (message.member.roles.cache.has(config.prankRoleId)) {
-      this.handlePrank(message);
+/*
+Define helper functions
+*/
+
+// Create helper function for errors to display a message to console & report to dev
+Reflect.defineProperty(client, "handleError", {
+  value: async function handleError(message, error, interaction) {
+    console.error(message, error);
+    const dev = await client.users.fetch(developerId);
+    dev.send(`${message}\n${error}`);
+    if (interaction) {
+      await interaction.reply({
+        content: "There was an error while executing this command!",
+        ephemeral: true,
+      });
     }
-  }
-
-  // Filter out messages that don't begin with the prefix or that are from the bot
-  if (!message.content.startsWith(config.prefix) || message.author.bot) {
-    return this.handlePin(null, message);
-  }
-
-  // Parses message for space seperated tokens
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/);
-  const commandName = args.shift().toLowerCase();
-
-  // Check for command with given name or alias for a command with given name
-  const command =
-    client.commands.get(commandName) ||
-    client.commands.find(
-      (cmd) => cmd.aliases && cmd.aliases.includes(commandName)
-    );
-  if (!command) {
-    console.log(`Command ${commandName} is unrecognized`);
-    return;
-  }
-
-  // Checks if command is server only, if so and is in dm sends error message (adminOnly commands can only be executed in server)
-  if (
-    (command.serverOnly || command.adminOnly || command.permissionLocked) &&
-    message.channel.type === "dm"
-  ) {
-    return message.channel.send("I can't execute that command inside DMs!");
-  }
-
-  // Checks if user has role for using the command.
-  if (
-    message.channel.type !== "dm" &&
-    !this.checkPermission(command, message.member)
-  ) {
-    return message.channel.send(
-      "Looks like you don't have permission to use that."
-    );
-  }
-
-  // Check if command being called with correct number of args
-  if (command.args && !args.length) {
-    let ret = `Improper usage of ${command.name}. `;
-    if (command.usage)
-      ret += `Usage: ${config.prefix}${command.name} ${command.usage}`;
-    return message.channel.send(ret);
-  }
-
-  // Check if user can call command or if on cooldown
-  const timeLeft = this.cooldownCheck(
-    command.name,
-    message.author.id,
-    command.cooldown || config.defaultCooldown
-  );
-  if (timeLeft) {
-    // user still has to wait
-    return message.channel.send(
-      `Woah there! You gotta wait ${timeLeft.toFixed(
-        1
-      )} more second(s) before using \`${command.name}\` again.`
-    );
-  }
-
-  // Try to execute command
-  try {
-    console.log(
-      `${message.author.tag} executing ${command.name} from channel ${message.channel.name}`
-    );
-    command.execute(message, args);
-  } catch (error) {
-    this.handleError(error);
-    message.channel.send(
-      `Uh oh an error occurred. <@&${config.supportRoleId}> has been notified and will try to fix the issue.`
-    );
-  }
+  },
 });
 
-client.on("messageUpdate", (oldMessage, newMessage) => {
-  // When a message is updated (edited) check if it needs to get pinned or unpinned
-  this.handlePin(oldMessage, newMessage);
-});
-
-client.on("messageReactionAdd", async (reaction, user) => {
-  // Check if the reaction added by a user to the class channel and if so gives them the class role
-  if (
-    user &&
-    !user.bot &&
-    reaction.emoji.toString() == config.joinClassEmoji &&
-    reaction.message.channel.id == config.classRegisterChannelId
-  ) {
-    const messageClass = this.findClass(reaction.message.id, "messageId");
-    if (messageClass) {
-      reaction.message.guild.roles
-        .fetch(messageClass.roleId)
-        .then((role) => {
-          reaction.message.guild.member(user).roles.add(role);
-          console.log(`Added ${user.tag} to ${role.name}`);
-        })
-        .catch((error) => this.handleError(error));
-      return;
+// Define helper function to check user rank as property of client
+Reflect.defineProperty(client, "checkRank", {
+  value: async function checkRank(member) {
+    // Get user data. If doesn't exist, create new user data
+    let user = client.userData.get(member.id);
+    if (!user) {
+      user = await Users.create({
+        user_id: member.id,
+        balance: 0,
+        experience: 0,
+        rank: 0,
+        lastMessage: new Date().setHours(0, 0, 0, 0),
+        dailyMessages: 0,
+      });
+      client.userData.set(member.id, user);
+      return false; // didn't update user's rank
     }
-  }
-});
 
-client.on("messageReactionRemove", async (reaction, user) => {
-  // Check if the reaction removed by a user to the class channel and if so removes the class role from them
-  if (
-    user &&
-    !user.bot &&
-    reaction.emoji.toString() == config.joinClassEmoji &&
-    reaction.message.channel.id == config.classRegisterChannelId
-  ) {
-    const messageClass = this.findClass(reaction.message.id, "messageId");
-    if (messageClass) {
-      reaction.message.guild.roles
-        .fetch(messageClass.roleId)
-        .then((role) => {
-          reaction.message.guild.member(user).roles.remove(role);
-          console.log(`Removed ${user.tag} from ${role.name}`);
-        })
-        .catch((error) => this.handleError(error));
-      return;
+    // Check if exceeding current max experience or below current min experience
+    const currRank = ranks[user.rank];
+    if (
+      (currRank.maxExperience && user.experience > currRank.maxExperience) ||
+      (currRank.minExperience && user.experience < currRank.minExperience)
+    ) {
+      // Get rank user should be moved to & update rank property
+      const newRank = ranks.find((r, index) => {
+        if (!r.maxExperience || r.maxExperience > user.experience) {
+          user.rank = index;
+          user.save();
+          return true;
+        }
+        return false;
+      });
+
+      // Add user to new role if it exists
+      if (newRank.roleId) {
+        await member.roles.add(
+          newRank.roleId,
+          `User's experience ${user.experience} within role's range ${currRank.minExperience}-${currRank.maxExperience}`
+        );
+      }
+
+      // Remove user from old role if it exists
+      if (currRank.roleId) {
+        await member.roles.remove(
+          currRank.roleId,
+          `User's experience ${user.experience} no longer in role's range ${currRank.minExperience}-${currRank.maxExperience}`
+        );
+      }
+
+      console.log(`Updated rank of ${member.user.tag} to rank ${newRank.name}`);
+      return true; // updated user rank
     }
-  }
+    return false; // didn't update user rank
+  },
 });
 
-// Sends welcome message on new user join
-client.on("guildMemberAdd", (member) => {
-  const classChannel = member.guild.channels.cache.get(
-    config.classRegisterChannelId
-  );
-  member.guild.channels.cache
-    .get(config.welcomeChannelId)
-    .send(
-      `**Welcome to UW Madison Online ${member}!**\n\n` +
-        `When you're ready to get started, head over to ${classChannel} to join the classes you are a part of.\n\n` +
-        "On Wisconsin!"
-    );
-  console.log(`${member.tag} joined the server`);
+// Define helper function to add money as property of userData collection
+Reflect.defineProperty(client.userData, "addBalance", {
+  value: async function addCurrency(id, amount) {
+    const user = client.userData.get(id);
+
+    if (user) {
+      user.balance += Number(amount);
+      return user.save();
+    }
+
+    const newUser = await Users.create({
+      user_id: id,
+      balance: amount,
+      experience: 0,
+      rank: 0,
+      lastMessage: new Date().setHours(0, 0, 0, 0),
+      dailyMessages: 0,
+    });
+    client.userData.set(id, newUser);
+
+    return newUser;
+  },
 });
 
-// Login to Discord
-client.login(config.token);
+// Define helper function to add experience as property of userData collection
+Reflect.defineProperty(client.userData, "addExperience", {
+  value: async function addCurrency(id, amount) {
+    const user = client.userData.get(id);
+
+    if (user) {
+      user.experience += Number(amount);
+      return user.save();
+    }
+
+    const newUser = await Users.create({
+      user_id: id,
+      balance: 0,
+      experience: amount,
+      rank: 0,
+      lastMessage: new Date().setHours(0, 0, 0, 0),
+      dailyMessages: 0,
+    });
+    client.userData.set(id, newUser);
+
+    return newUser;
+  },
+});
+
+// Define helper function to get a user's balance as property of userData collection
+Reflect.defineProperty(client.userData, "getBalance", {
+  value: function getBalance(id) {
+    const user = client.userData.get(id);
+    return user ? user.balance : 0;
+  },
+});
+
+// Define helper function to get a user's experience as property of userData collection
+Reflect.defineProperty(client.userData, "getExperience", {
+  value: function getExperience(id) {
+    const user = client.userData.get(id);
+    return user ? user.experience : 0;
+  },
+});
+
+// Define helper function to record sent messages & give experience
+Reflect.defineProperty(client.userData, "messageSent", {
+  value: async function messageSent(id) {
+    const user = client.userData.get(id);
+    const currDate = new Date().setHours(0, 0, 0, 0);
+
+    if (user) {
+      if (user.lastMessage < currDate) {
+        user.dailyMessages = 0;
+      }
+      if (user.dailyMessages < dailyExperienceLimit) {
+        user.experience += 1;
+      }
+      user.dailyMessages += 1;
+      user.lastMessage = currDate;
+      return user.save();
+    }
+
+    const newUser = await Users.create({
+      user_id: id,
+      balance: 0,
+      experience: 1,
+      rank: 0,
+      lastMessage: currDate,
+      dailyMessages: 1,
+    });
+    client.userData.set(id, newUser);
+
+    return newUser;
+  },
+});
+
+// Define helper function to add/remove classes to a class channel category
+Reflect.defineProperty(client.categoryData, "addClass", {
+  value: async function addClass(id, amount) {
+    const category = client.categoryData.get(id);
+
+    if (category) {
+      category.numClasses += Number(amount);
+      return category.save();
+    }
+
+    const newCategory = await Categories.create({
+      id: id,
+      numClasses: amount,
+    });
+    client.categoryData.set(id, newCategory);
+
+    return newCategory;
+  },
+});
+
+// Define helper function to add/remove classes to a class channel category
+Reflect.defineProperty(client.classData, "addMessage", {
+  value: async function addMessage(name, amount) {
+    const classObj = client.classData.get(name);
+
+    classObj.numMessages += Number(amount);
+    return classObj.save();
+  },
+});
+
+// Define helper function to delete classes from classData
+Reflect.defineProperty(client.classData, "deleteClass", {
+  value: async function deleteClass(name) {
+    await Classes.destroy({ where: { name } });
+    client.classData.delete(name);
+  },
+});
+
+// Go online
+client.login(token);

@@ -1,42 +1,46 @@
-const { client } = require("../index.js");
-const { prefix } = require("../config.json");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { MessageEmbed } = require("discord.js");
+const { adminRoleId } = require("../config.json");
 
-const activityTypes = [
-  "playing",
-  "streaming",
-  "listening",
-  "watching",
-  "competing",
-  "custom",
-];
+/*
+Sets the bot's activity status type and message.
+*/
 
 module.exports = {
-  name: "status",
-  description: "Set my status activity or message!",
-  usage: `<${activityTypes.join("|")}> <name/message>`,
-  cooldown: 5,
-  args: true,
-  serverOnly: false,
-  adminOnly: false,
-  levelIndexRequired: 2,
-  aliases: ["setstatus"],
+  global: false,
+  roleIds: [adminRoleId],
+  data: new SlashCommandBuilder()
+    .setName("status")
+    .setDescription("Sets my status or activity message!")
+    .addStringOption((option) =>
+      option
+        .setName("type")
+        .setDescription("The type of activity")
+        .setRequired(true)
+        .addChoice("playing", "PLAYING")
+        .addChoice("listening", "LISTENING")
+        .addChoice("watching", "WATCHING")
+        .addChoice("streaming", "STREAMING")
+        .addChoice("competing", "COMPETING")
+    )
+    .addStringOption((option) =>
+      option
+        .setName("message")
+        .setDescription("The activity message")
+        .setRequired(true)
+    ),
+  async execute(interaction) {
+    const type = interaction.options.getString("type");
+    const message = interaction.options.getString("message");
+    interaction.client.user.setActivity(message, { type: type });
 
-  execute(message, args) {
-    activityType = args.shift().toLowerCase();
-    if (!activityTypes.includes(activityType)) {
-      return message.channel.send(
-        `Improper usage of ${this.name}. Usage: ${prefix}${this.name} ${this.usage}`
+    const embed = new MessageEmbed()
+      .setColor("#ff0000")
+      .setDescription(`${type} ${message}`)
+      .setAuthor(
+        `Successfully updated status`,
+        interaction.client.user.avatarURL()
       );
-    }
-    if (activityType == "custom") {
-      client.user.setActivity(args.join(" "));
-    } else {
-      client.user.setActivity(args.join(" "), {
-        type: activityType.toUpperCase(),
-      });
-    }
-    console.log(
-      `Set status to ${activityType.toUpperCase()}: ${args.join(" ")}`
-    );
+    await interaction.reply({ embeds: [embed], ephemeral: true });
   },
 };

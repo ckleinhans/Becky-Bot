@@ -1,14 +1,13 @@
+const { SlashCommandBuilder } = require("@discordjs/builders");
+
+/*
+Command that replies with a clip of Joe Gatto.
+*/
+
 module.exports = {
-  name: 'joe',
-  description: 'Thanks Joe.',
-  usage: '',
-  cooldown: 5,
-  args: false,
-  serverOnly: false,
-  adminOnly: false,
-  aliases: ['thanksjoe', 'beok', 'gonnabeok'],
-  
-  execute(message, args) {
-    message.channel.send({ files: ['./resources/thanksjoe.mp4'] });
+  global: true,
+  data: new SlashCommandBuilder().setName("joe").setDescription("Thanks Joe."),
+  async execute(interaction) {
+    await interaction.reply({ files: ["./resources/thanksjoe.mp4"] });
   },
 };
