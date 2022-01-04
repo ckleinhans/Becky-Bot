@@ -54,14 +54,14 @@ module.exports = {
     }
 
     // Check course number is valid
-    if (number < 100 || number > 799) {
+    if (number < 1 || number > 799) {
       return await interaction.reply({
-        content: `Course numbers must be between 100 and 799`,
+        content: `Course numbers must be between 1 and 799`,
         ephemeral: true,
       });
     }
 
-    const name = `${department}-${number}`;
+    const name = `${department}-${number.toString().padStart(3, "0")}`;
 
     const classJoinChannel = await interaction.guild.channels.fetch(
       classJoinChannelId
