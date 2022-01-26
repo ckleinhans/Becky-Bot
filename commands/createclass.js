@@ -61,6 +61,9 @@ module.exports = {
       });
     }
 
+    // Creating all class components sometimes takes long, so defer the reply
+    await interaction.deferReply({ ephemeral: false });
+
     const name = `${department}-${number.toString().padStart(3, "0")}`;
 
     const classJoinChannel = await interaction.guild.channels.fetch(
@@ -82,7 +85,7 @@ module.exports = {
         .setURL(classMsg.url)
         .setAuthor(`Class has already been created!`);
 
-      return await interaction.reply({ embeds: [embed] });
+      return await interaction.editReply({ embeds: [embed] });
     }
 
     const newClassObj = { name, numMessages: 0 };
@@ -203,6 +206,6 @@ module.exports = {
         interaction.user.avatarURL()
       );
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   },
 };

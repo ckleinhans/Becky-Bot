@@ -77,10 +77,17 @@ Reflect.defineProperty(client, "handleError", {
     const dev = await client.users.fetch(developerId);
     dev.send(`${message}\n${error}`);
     if (interaction) {
-      await interaction.reply({
-        content: "There was an error while executing this command!",
-        ephemeral: true,
-      });
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: "There was an error while executing this command!",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.reply({
+          content: "There was an error while executing this command!",
+          ephemeral: true,
+        });
+      }
     }
   },
 });
